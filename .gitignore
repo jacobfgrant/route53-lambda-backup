@@ -1,0 +1,4 @@
+#.gitignore file for route53-lambda-backup
+
+#.DS_Store files
+.DS_Store
