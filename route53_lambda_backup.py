@@ -144,50 +144,6 @@ def write_zone_to_csv(zone):
     return
 
 
-# this function is redundant !!!
-# one of these two identical functions needs to be removed
-def write_zone_to_csv(zone):
-    """Write hosted zone records to a csv file in /tmp/."""
-    zone_file_name = '/tmp/' + zone['Name'] + 'csv'
-    zone_records = get_route53_zone_records(zone['Id'])
-    with open(zone_file_name, 'w', newline='') as csv_file:
-        writer = csv.writer(csv_file)
-        writer.writerow([
-            'NAME', 'TYPE', 'VALUE',
-            'TTL', 'REGION', 'WEIGHT',
-            'SETID', 'FAILOVER', 'EVALUATE_HEALTH'
-        ])
-        # include record values to loop through
-        record_values = [
-            'Name', 'Type', 'Value',
-            'TTL', 'Region', 'Weight',
-            'SetIdentifier', 'Failover',
-            'EvaluateTargetHealth'
-        ]
-        # loop through all the records for a given zone
-        for record in zone_records:
-            value = get_record_value(record)
-            i = 0
-            csv_row = [''] * 9
-            while i < len(record_values):
-                # skip 'Value'
-                if(record_values[i] == 'Value'):
-                    i += 1
-                    continue
-                # skip 'EvaluateTargetHealth'
-                if(record_values[i] == 'EvaluateTargetHealth'):
-                    record = try_record('AliasTarget', record)
-                csv_row[i] = try_record(record_values[i], record)
-                i += 1
-            # if multiple values (e.g., MX records), write each as its own row
-            for v in value:
-                csv_row[2] = v
-                writer.writerow(csv_row)
-    return
-
-
-# Handler Function
-
 def lambda_handler(event, context):
     """Handler function for AWS Lambda"""
     time_stamp = time.strftime("%Y-%m-%dT%H:%M:%SZ", datetime.utcnow().utctimetuple())
