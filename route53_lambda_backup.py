@@ -30,7 +30,8 @@ route53 = boto3.client('route53')
 
 def create_s3_bucket(bucket_name, bucket_region='us-east-1'):
     """Create an Amazon S3 bucket."""
-    # creating bucket in N. Virginia requires no CreateBucketConfiguration parameter
+    # creating bucket in us-east-1 (N. Virginia) requires no
+    # CreateBucketConfiguration parameter
     if(bucket_region == 'us-east-1'):
         try:
             s3.create_bucket(
@@ -50,39 +51,51 @@ def create_s3_bucket(bucket_name, bucket_region='us-east-1'):
             )
         except Exception as e:
             print(e)
-    return
 
 
 def upload_to_s3(folder, filename, bucket_name, key):
     """Upload a file to a folder in an Amazon S3 bucket."""
     key = folder + '/' + key
     s3.upload_file(filename, bucket_name, key)
-    return
 
 
 def get_route53_hosted_zones(next_zone=None):
     """Recursively returns a list of hosted zones in Amazon Route 53."""
     if(next_zone):
-        response = route53.list_hosted_zones_by_name(DNSName=next_zone[0], HostedZoneId=next_zone[1])
+        response = route53.list_hosted_zones_by_name(
+            DNSName=next_zone[0],
+            HostedZoneId=next_zone[1]
+        )
     else:
         response = route53.list_hosted_zones_by_name()
     hosted_zones = response['HostedZones']
     # if response is truncated, call function again with next zone name/id
     if(response['IsTruncated']):
-        hosted_zones += get_route53_hosted_zones((response['NextDNSName'], response['NextHostedZoneId']))
+        hosted_zones += get_route53_hosted_zones(
+            (response['NextDNSName'],
+            response['NextHostedZoneId'])
+        )
     return hosted_zones
 
 
 def get_route53_zone_records(zone_id, next_record=None):
-    """Recursively returns a list of records of a hosted zone in Amazon Route 53."""
+    """Recursively returns a list of records of a hosted zone in Route 53."""
     if(next_record):
-        response = route53.list_resource_record_sets(HostedZoneId=zone_id, StartRecordName=next_record[0], StartRecordType=next_record[1])
+        response = route53.list_resource_record_sets(
+            HostedZoneId=zone_id,
+            StartRecordName=next_record[0],
+            StartRecordType=next_record[1]
+        )
     else:
         response = route53.list_resource_record_sets(HostedZoneId=zone_id)
     zone_records = response['ResourceRecordSets']
     # if response is truncated, call function again with next record name/id
     if(response['IsTruncated']):
-        zone_records += get_route53_zone_records(zone_id, (response['NextRecordName'], response['NextRecordType']))
+        zone_records += get_route53_zone_records(
+            zone_id,
+            (response['NextRecordName'],
+            response['NextRecordType'])
+        )
     return zone_records
 
 
@@ -136,13 +149,14 @@ def write_zone_to_csv(zone):
             csv_row[5] = try_record('Weight', record)
             csv_row[6] = try_record('SetIdentifier', record)
             csv_row[7] = try_record('Failover', record)
-            csv_row[8] = try_record('EvaluateTargetHealth', try_record('AliasTarget', record))
+            csv_row[8] = try_record('EvaluateTargetHealth',
+                try_record('AliasTarget', record)
+            )
             value = get_record_value(record)
             # if multiple values (e.g., MX records), write each as its own row
             for v in value:
                 csv_row[2] = v
                 writer.writerow(csv_row)
-    return
 
 
 def write_zone_to_json(zone):
@@ -154,9 +168,13 @@ def write_zone_to_json(zone):
         json.dump(zone_records, json_file, indent=4)
 
 
+## HANDLER FUNCTION ##
+
 def lambda_handler(event, context):
     """Handler function for AWS Lambda"""
-    time_stamp = time.strftime("%Y-%m-%dT%H:%M:%SZ", datetime.utcnow().utctimetuple())
+    time_stamp = time.strftime("%Y-%m-%dT%H:%M:%SZ",
+        datetime.utcnow().utctimetuple()
+    )
     create_s3_bucket(s3_bucket_name, s3_bucket_region)
     hosted_zones = get_route53_hosted_zones()
     for zone in hosted_zones:
@@ -174,7 +192,6 @@ def lambda_handler(event, context):
             s3_bucket_name,
             (zone['Name'] + 'json')
         )
-    return
 
 
 if __name__ == "__main__":
