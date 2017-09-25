@@ -2,6 +2,7 @@
 
 import os
 import csv
+import json
 import time
 from datetime import datetime
 import boto3
@@ -144,6 +145,15 @@ def write_zone_to_csv(zone):
     return
 
 
+def write_zone_to_json(zone):
+    """Write hosted zone records to a json file in /tmp/."""
+    zone_file_name = '/tmp/' + zone['Name'] + 'json'
+    zone_records = get_route53_zone_records(zone['Id'])
+    # write to json file with zone name
+    with open(zone_file_name, 'w') as json_file:
+        json.dump(zone_records, json_file, indent=4)
+
+
 def lambda_handler(event, context):
     """Handler function for AWS Lambda"""
     time_stamp = time.strftime("%Y-%m-%dT%H:%M:%SZ", datetime.utcnow().utctimetuple())
@@ -156,6 +166,13 @@ def lambda_handler(event, context):
             ('/tmp/' + zone['Name'] + 'csv'),
             s3_bucket_name,
             (zone['Name'] + 'csv')
+        )
+        write_zone_to_json(zone)
+        upload_to_s3(
+            time_stamp,
+            ('/tmp/' + zone['Name'] + 'json'),
+            s3_bucket_name,
+            (zone['Name'] + 'json')
         )
     return
 
