@@ -126,10 +126,9 @@ def try_record(test, record):
     return value
 
 
-def write_zone_to_csv(zone):
+def write_zone_to_csv(zone, zone_records):
     """Write hosted zone records to a csv file in /tmp/."""
     zone_file_name = '/tmp/' + zone['Name'] + 'csv'
-    zone_records = get_route53_zone_records(zone['Id'])
     # write to csv file with zone name
     with open(zone_file_name, 'w', newline='') as csv_file:
         writer = csv.writer(csv_file)
@@ -157,15 +156,16 @@ def write_zone_to_csv(zone):
             for v in value:
                 csv_row[2] = v
                 writer.writerow(csv_row)
+    return zone_file_name
 
 
-def write_zone_to_json(zone):
+def write_zone_to_json(zone, zone_records):
     """Write hosted zone records to a json file in /tmp/."""
     zone_file_name = '/tmp/' + zone['Name'] + 'json'
-    zone_records = get_route53_zone_records(zone['Id'])
     # write to json file with zone name
     with open(zone_file_name, 'w') as json_file:
         json.dump(zone_records, json_file, indent=4)
+    return zone_file_name
 
 
 ## HANDLER FUNCTION ##
@@ -178,17 +178,16 @@ def lambda_handler(event, context):
     create_s3_bucket(s3_bucket_name, s3_bucket_region)
     hosted_zones = get_route53_hosted_zones()
     for zone in hosted_zones:
-        write_zone_to_csv(zone)
+        zone_records = get_route53_zone_records(zone['Id'])
         upload_to_s3(
             time_stamp,
-            ('/tmp/' + zone['Name'] + 'csv'),
+            write_zone_to_csv(zone, zone_records),
             s3_bucket_name,
             (zone['Name'] + 'csv')
         )
-        write_zone_to_json(zone)
         upload_to_s3(
             time_stamp,
-            ('/tmp/' + zone['Name'] + 'json'),
+            write_zone_to_json(zone, zone_records),
             s3_bucket_name,
             (zone['Name'] + 'json')
         )
