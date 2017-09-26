@@ -178,15 +178,16 @@ def lambda_handler(event, context):
     create_s3_bucket(s3_bucket_name, s3_bucket_region)
     hosted_zones = get_route53_hosted_zones()
     for zone in hosted_zones:
+        zone_folder = (time_stamp + '/' + zone['Name'][:-1])
         zone_records = get_route53_zone_records(zone['Id'])
         upload_to_s3(
-            time_stamp,
+            zone_folder,
             write_zone_to_csv(zone, zone_records),
             s3_bucket_name,
             (zone['Name'] + 'csv')
         )
         upload_to_s3(
-            time_stamp,
+            zone_folder,
             write_zone_to_json(zone, zone_records),
             s3_bucket_name,
             (zone['Name'] + 'json')
