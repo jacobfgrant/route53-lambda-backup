@@ -6,6 +6,7 @@ import json
 import time
 from datetime import datetime
 import boto3
+from botocore.exceptions import ClientError
 
 
 # Set environmental variables
@@ -30,27 +31,29 @@ route53 = boto3.client('route53')
 
 def create_s3_bucket(bucket_name, bucket_region='us-east-1'):
     """Create an Amazon S3 bucket."""
-    # creating bucket in us-east-1 (N. Virginia) requires no
-    # CreateBucketConfiguration parameter
+    try:
+        response = s3.head_bucket(Bucket=bucket_name)
+        return response
+    except ClientError as e:
+        if(e.response['Error']['Code'] != '404'):
+            print(e)
+            return None
+    # creating bucket in us-east-1 (N. Virginia) requires
+    # no CreateBucketConfiguration parameter be passed
     if(bucket_region == 'us-east-1'):
-        try:
-            s3.create_bucket(
-                ACL='private',
-                Bucket=bucket_name
-            )
-        except Exception as e:
-            print(e)
+        response = s3.create_bucket(
+            ACL='private',
+            Bucket=bucket_name
+        )
     else:
-        try:
-            s3.create_bucket(
-                ACL='private',
-                Bucket=bucket_name,
-                CreateBucketConfiguration={
-                    'LocationConstraint': bucket_region
-                }
-            )
-        except Exception as e:
-            print(e)
+        response = s3.create_bucket(
+            ACL='private',
+            Bucket=bucket_name,
+            CreateBucketConfiguration={
+                'LocationConstraint': bucket_region
+            }
+        )
+    return response
 
 
 def upload_to_s3(folder, filename, bucket_name, key):
@@ -175,7 +178,11 @@ def lambda_handler(event, context):
     time_stamp = time.strftime("%Y-%m-%dT%H:%M:%SZ",
         datetime.utcnow().utctimetuple()
     )
-    create_s3_bucket(s3_bucket_name, s3_bucket_region)
+    if(not create_s3_bucket(s3_bucket_name, s3_bucket_region)):
+        return False
+    #bucket_response = create_s3_bucket(s3_bucket_name, s3_bucket_region)
+    #if(not bucket_response):
+        #return False
     hosted_zones = get_route53_hosted_zones()
     for zone in hosted_zones:
         zone_folder = (time_stamp + '/' + zone['Name'][:-1])
@@ -192,6 +199,7 @@ def lambda_handler(event, context):
             s3_bucket_name,
             (zone['Name'] + 'json')
         )
+    return True
 
 
 if __name__ == "__main__":
