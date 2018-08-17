@@ -185,7 +185,10 @@ def lambda_handler(event, context):
         #return False
     hosted_zones = get_route53_hosted_zones()
     for zone in hosted_zones:
-        zone_folder = (time_stamp + '/' + zone['Name'][:-1])
+        if (zone['Config']['PrivateZone']):
+            zone_folder = (time_stamp + '/' + zone['Name'][:-1] + '-Private')
+        else:
+            zone_folder = (time_stamp + '/' + zone['Name'][:-1] + '-Public')
         zone_records = get_route53_zone_records(zone['Id'])
         upload_to_s3(
             zone_folder,
