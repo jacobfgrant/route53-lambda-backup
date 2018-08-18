@@ -15,15 +15,21 @@ variable "aws_region" {
   default     = "us-west-1"
 }
 
+variable "bucket_name" {
+  type        = "string"
+  description = "S3 bucket for backups"
+}
+
 variable "zip_file_path" {
   type        = "string"
   description = "Path to .zip file"
   default     = "route53_lambda_backup.zip"
 }
 
-variable "bucket_name" {
+variable "cloudwatch_schedule" {
   type        = "string"
-  description = "S3 bucket for backups"
+  description = "CloudWatch backup schedule"
+  default     = "cron(0 * ? * * *)"
 }
 
 
@@ -57,6 +63,31 @@ resource "aws_lambda_function" "route53_backup_lambda_function" {
       s3_bucket_region = "${var.aws_region}"
     }
   }
+}
+
+
+# CloudWatch Event Rule
+resource "aws_cloudwatch_event_rule" "route53_backup_event_rule" {
+  name                = "route53-lambda-backup-event"
+  description         = "Backup Route 53 DNS records to S3"
+  schedule_expression = "${var.cloudwatch_schedule}"
+}
+
+
+# CloudWatch Event Target
+resource "aws_cloudwatch_event_target" "route53_backup_event_target" {
+  rule      = "${aws_cloudwatch_event_rule.route53_backup_event_rule.name}"
+  arn       = "${aws_lambda_function.route53_backup_lambda_function.arn}"
+}
+
+
+# Lambda Permissions
+resource "aws_lambda_permission" "allow_cloudwatch" {
+  statement_id   = "AllowExecutionFromCloudWatch"
+  action         = "lambda:InvokeFunction"
+  function_name  = "${aws_lambda_function.route53_backup_lambda_function.function_name}"
+  principal      = "events.amazonaws.com"
+  source_arn     = "${aws_cloudwatch_event_rule.route53_backup_event_rule.arn}"
 }
 
 
