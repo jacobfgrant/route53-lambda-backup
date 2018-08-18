@@ -43,8 +43,9 @@ provider "aws" {
 
 # S3 Bucket
 resource "aws_s3_bucket" "route53_backup_s3_bucket" {
-  bucket = "${var.bucket_name}"
-  acl    = "private"
+  bucket        = "${var.bucket_name}"
+  acl           = "private"
+  force_destroy = false
 }
 
 
