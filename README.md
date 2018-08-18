@@ -4,7 +4,7 @@ An AWS Lambda function to automatically back up Route 53 DNS records to S3.
 
 ## Setup
 
-This script can be run either as a scheduled AWS Lambda function or as a cron job. Simply upload the script to AWS Lambda, set the `s3_bucket_name` and `s3_bucket_region` environmental variables, set up an IAM role (with Route 53 read-only and S3 read-write permissions), and set a schedule.
+This script can be run either as a scheduled AWS Lambda function or as a cron job. Simply upload the script to AWS Lambda, set the `s3_bucket_name` and `s3_bucket_region` environmental variables, set up an IAM role (with Route 53 read-only and S3 read-write permissions), and set a schedule. There is also a [Terraform](https://github.com/hashicorp/terraform) configuration file to easily create/update the Lambda function, S3 buckent, and IAM roles/policies in AWS.
 
 Alternatively, you can set the script to run using cron on an EC2 instance with the appropriate IAM role permissions. Don't forget to add the proper Python 3 shebang and set the `s3_bucket_name` and `s3_bucket_region` variables in the file when doing so.
 
