@@ -3,5 +3,13 @@
 #.DS_Store files
 .DS_Store
 
-#.zip files
+# Terraform directory
+.terraform
+
+# Terraform files
+*.tfstate
+*.tfstate.backup
+*.tfvars
+
+# Zip files
 *.zip
