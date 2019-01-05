@@ -1,0 +1,28 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": ["s3:ListBucket"],
+            "Resource": ["arn:aws:s3:::mycompany-route53-zonefile-backups"]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:PutObject",
+                "s3:GetObject"
+            ],
+            "Resource": ["arn:aws:s3:::mycompany-route53-zonefile-backups/*"]
+        },
+        {
+            "Effect":"Allow",
+            "Action":[
+                "route53:GetHostedZone",
+                "route53:ListResourceRecordSets",
+                "route53:ListHostedZones",
+                "route53:ListHostedZonesByName"
+            ],
+            "Resource":"*"
+        }
+    ]
+}
